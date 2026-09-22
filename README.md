@@ -34,3 +34,17 @@ meesho-reseller-project/
 │   ├── agent_spec.md
 │   └── mock_agent_runner.py
 └── README.md
+# Meesho Reseller Pipeline & Agentic Workflow
+
+## Overview
+This repository contains the end-to-end analytics and mock agentic pipeline for monitoring Meesho reseller performance, automated category growth tracking, guardrail validation, and stakeholder message drafting.
+
+---
+
+## 1. How to Regenerate Data & Run the Pipeline in Order
+
+To run the entire pipeline locally from scratch with **zero API keys required**, execute the scripts in the following exact sequence:
+
+1. **Part 1 (SQL Analytics & Data Generation):**
+   ```bash
+   python part1_sql/run_queries.py
