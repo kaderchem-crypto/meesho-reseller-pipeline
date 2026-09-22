@@ -75,3 +75,5 @@ def validate_feed(csv_path: str) -> tuple[bool, list[str]]:
 
     if errors:
         return False, errors
+
+    return True, []

@@ -45,14 +45,14 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
         
     current_data = load_csv_data(current_month_csv)
     prev_data = load_csv_data(previous_month_csv)
-    prev_rev_map = {row["category"]: float(row["total_revenue"]) for row in prev_data}
+    prev_rev_map = {row["category"]: float(row["revenue"]) for row in prev_data}
     
     flagged_raw = []
     escalated_categories = []
     
     for row in current_data:
         cat = row["category"]
-        curr_rev = float(row["total_revenue"])
+        curr_rev = float(row["revenue"])
         prev_rev = prev_rev_map.get(cat, 0.0)
         
         pct = mom_growth(prev_rev, curr_rev)

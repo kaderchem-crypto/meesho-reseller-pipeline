@@ -1,95 +1,62 @@
-# Meesho Reseller Growth & Alert Intelligence Pipeline
+# Meesho Reseller Growth Pipeline
 
-An end-to-end automated analytics, data validation, reliable narrative generation, and agentic monitoring pipeline built for Meesho's reseller-operations team.
+An end-to-end local pipeline for reseller data generation, SQL analytics, revenue validation, narrative masking, and agentic category monitoring.
 
-## Project Structure & Deliverables
+## Project Structure
 
 ```text
-meesho-reseller-project/
-├── data/
-│   ├── generate_dataset.py
-│   ├── meesho_reseller.db
-│   ├── resellers.csv
-│   └── orders.csv
-├── part1_sql/
-│   ├── run_queries.py (or queries.sql)
-│   └── output/
-│       ├── monthly_category_revenue.csv
-│       ├── region_revenue.csv
-│       ├── top_resellers.csv
-│       ├── zero_order_resellers.csv
-│       └── june_delivered_aov.csv
-├── part2_engine/
-│   ├── growth_engine.py
-│   ├── test_growth_engine.py
-│   └── fixtures/
-│       ├── corrupted_feed.csv
-│       └── monthly_category_revenue.csv
-├── part3_narrative/
-│   ├── masking.py
-│   ├── narrative_report.md
-│   ├── prompt_pack.md
-│   └── test_masking.py
-├── part4_agent/
-│   ├── agent_spec.md
-│   └── mock_agent_runner.py
-└── README.md
-# Meesho Reseller Pipeline & Agentic Workflow
+data/
+   generate_dataset.py       Generate CSV files and the SQLite database
+part1_sql/
+   run_queries.py            Generate analytics CSV outputs
+   output/                   Generated query results
+part2_engine/
+   growth_engine.py          Growth calculations and feed validation
+   test_growth_engine.py     Growth and validation tests
+   fixtures/                 Valid and corrupted feed examples
+part3_narrative/
+   masking.py                Reseller aliasing and leak detection
+   test_masking.py           Masking tests
+part4_agent/
+   mock_agent_runner.py      Human-approval workflow simulation
+   test_mock_agent_runner.py Agent workflow tests
+```
 
-## Overview
-This repository contains the end-to-end analytics and mock agentic pipeline for monitoring Meesho reseller performance, automated category growth tracking, guardrail validation, and stakeholder message drafting.
+## Requirements
 
----
+- Python 3.10 or newer
+- No external packages are required
 
-## 1. How to Regenerate Data & Run the Pipeline in Order
+## Run From Scratch
 
-To run the entire pipeline locally from scratch with **zero API keys required**, execute the scripts in the following exact sequence:
+Run these commands from the project root:
 
-1. **Part 1 (SQL Analytics & Data Generation):**
-   ```bash
-   python part1_sql/run_queries.py
-   # Meesho Reseller Growth & Alert Intelligence Pipeline
+```bash
+python data/generate_dataset.py
+python part1_sql/run_queries.py
+python -m unittest discover -v
+python part4_agent/mock_agent_runner.py
+python -m part3_narrative.test_masking
+```
 
-An end-to-end automated analytics, data validation, reliable narrative generation, and agentic monitoring pipeline built for Meesho's reseller-operations team.
+The first command creates `data/resellers.csv`, `data/orders.csv`, and `data/meesho_reseller.db`. The SQL command writes analytics CSV files under `part1_sql/output/`.
 
-## Project Structure & Deliverables
+The agent validates its current feed before calculating Month-on-Month growth. Invalid input produces a hard stop. Valid flagged categories are sorted by absolute growth, limited to the top three, and held for human approval rather than sent automatically.
 
-meesho-reseller-project/
-├── data/
-│   ├── generate_dataset.py
-│   ├── meesho_reseller.db
-│   ├── resellers.csv
-│   └── orders.csv
-├── part1_sql/
-│   ├── run_queries.py
-│   └── output/
-│       ├── monthly_category_revenue.csv
-│       ├── region_revenue.csv
-│       ├── top_resellers.csv
-│       ├── zero_order_resellers.csv
-│       └── june_delivered_aov.csv
-├── part2_engine/
-│   ├── growth_engine.py
-│   ├── test_growth_engine.py
-│   └── fixtures/
-│       ├── corrupted_feed.csv
-│       └── monthly_category_revenue.csv
-├── part3_narrative/
-│   ├── masking.py
-│   ├── narrative_report.md
-│   ├── prompt_pack.md
-│   └── test_masking.py
-├── part4_agent/
-│   ├── agent_spec.md
-│   └── mock_agent_runner.py
-└── README.md
+## Feed Contract
 
----
+Revenue feeds must contain these columns in order:
 
-## 1. How to Regenerate the Dataset and Run Every Part in Order
+```text
+month,category,revenue,n_orders
+```
 
-To run the entire pipeline locally from scratch, execute the scripts in the following exact sequence:
+Use `part2_engine/fixtures/monthly_category_revenue.csv` for a valid example and `part2_engine/fixtures/corrupted_feed.csv` for validation failure cases.
 
-1. **Dataset Generation:**
-   ```bash
-   python data/generate_dataset.py
+## Outputs
+
+- `monthly_category_revenue.csv`: monthly revenue and order count by category
+- `region_revenue.csv`: revenue and order count by region
+- `top_resellers.csv`: top resellers above the configured spend threshold
+- `zero_order_resellers.csv`: resellers without orders
+- `june_delivered_aov.csv`: June delivered average order value
