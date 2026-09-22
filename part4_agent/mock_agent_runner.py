@@ -1,13 +1,16 @@
 import os
 import csv
 import json
+import sys
 from typing import Dict, Any, List
 
-# Import Part 2 growth engine functions unmodified
+# Add project root directory to sys.path for robust module importing
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from part2_engine.growth_engine import validate_feed, mom_growth, is_flagged
 
 def load_csv_data(file_path: str) -> List[Dict[str, str]]:
-    """Helper to load CSV rows into a list of dictionaries."""
+    """Helper function to load CSV rows into a list of dictionaries."""
     rows = []
     if not os.path.exists(file_path):
         return rows
@@ -21,10 +24,14 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
     """
     Executes the 8-step agentic workflow for the specified month transition.
     """
-    # Subtask 1 & 2: Load current feed and run validate_feed
-    current_data = load_csv_data(current_month_csv)
-    is_valid, validation_errors = validate_feed(current_month_csv)
-    
+    # Safe validation call handling potential return structures
+    validation_result = validate_feed(current_month_csv)
+    if isinstance(validation_result, tuple):
+        is_valid, validation_errors = validation_result
+    else:
+        is_valid = bool(validation_result)
+        validation_errors = [] if is_valid else ["Feed validation failed."]
+        
     if not is_valid:
         return {
             "run_month": month,
@@ -36,14 +43,13 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
             "action_taken": "hard_stop"
         }
         
-    # Load previous month data for comparison
+    current_data = load_csv_data(current_month_csv)
     prev_data = load_csv_data(previous_month_csv)
     prev_rev_map = {row["category"]: float(row["total_revenue"]) for row in prev_data}
     
     flagged_raw = []
     escalated_categories = []
     
-    # Subtask 3, 4 & 7b: Compute growth and evaluate flags / exact boundaries
     for row in current_data:
         cat = row["category"]
         curr_rev = float(row["total_revenue"])
@@ -63,16 +69,12 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
                 "abs_mag": abs(pct)
             })
             
-    # Subtask 5: Sort flagged categories by abs(mom_pct) descending
     flagged_raw.sort(key=lambda x: x["abs_mag"], reverse=True)
     
-    # Subtask 6 & 7: Cap at top 3 for drafting, suppress the rest
     top_flagged = flagged_raw[:3]
     suppressed_flagged = flagged_raw[3:]
-    
     suppressed_categories = [item["category"] for item in suppressed_flagged]
     
-    # Build drafted entries
     flagged_categories_output = []
     prev_month_name = "April" if month == "May" else "May"
     
@@ -82,7 +84,6 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
         curr_rev = item["current_revenue"]
         prev_rev = item["previous_revenue"]
         
-        # Part 3 Template-fill message generation strictly tracing numbers
         message = (
             f"Stakeholder Update for {cat} ({month} vs. {prev_month_name}): "
             f"Recorded an MoM change of {pct:.2f}% "
@@ -99,7 +100,6 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
             "message": message
         })
 
-    # Subtask 8: Emit structured JSON object
     return {
         "run_month": month,
         "validation_status": "valid",
@@ -111,10 +111,9 @@ def run(month: str, previous_month_csv: str, current_month_csv: str) -> Dict[str
     }
 
 if __name__ == "__main__":
-    # Example execution test for May scenario
     result = run(
         month="May",
-        previous_month_csv="part1_sql/output/april_revenue.csv", # Adjust path if needed based on fixtures
-        current_month_csv="part1_sql/output/monthly_category_revenue.csv"
+        previous_month_csv="part2_engine/fixtures/monthly_category_revenue.csv",
+        current_month_csv="part2_engine/fixtures/monthly_category_revenue.csv"
     )
     print(json.dumps(result, indent=2))
